@@ -5,7 +5,7 @@ $(document).ready(function () {
         method: 'GET',
         success: function (data) {
 
-            var object = { // Creazione Oggetto che popoleremo con i contenuti della chiamata Ajax
+            var objectMonth = { // Creazione Oggetto con i mesi che popoleremo con i contenuti della chiamata Ajax
                 gennaio: 0,
                 febbraio: 0,
                 marzo: 0,
@@ -19,9 +19,19 @@ $(document).ready(function () {
                 novembre: 0,
                 dicembre: 0,
             };
+            var objectSalesman = {}; // Creazione oggetto che popoleremo con i salesman e i rispettivi amount
 
-            addMonthAmout(data, object);
-            createLineChart('#chart', createLabels(object), createData(object));
+            var arrayAmount = []; // Creazione Array vuoto che popoleremo con gli amount generici
+            addArrayAmount(data, arrayAmount); // Funzione per la popolazione dell'arrayAmount
+
+            var totalAmount = arrayAmount.reduce(function(a, b){ // Creazione variabile con la somma di tutti i valori dell'arrayAmount
+                return a + b;
+            }, 0);
+
+            addMonthAmount(data, objectMonth); // Richiamo funzione per popolamento objectMonth
+            addSalesmanAmount(data, objectSalesman); // Richiamo funzione per popolamento objectSalesman
+            createLineChart('#line-chart', createLabels(objectMonth), createData(objectMonth)); // Richiamo funzione per generazione Grafico Line
+            createPieChart('#pie-chart', createLabels(objectSalesman), createDataPerc(objectSalesman, totalAmount)); // Richiamo funzione per generazione Grafico Pie
 
         },
         error: function (err) {
@@ -29,13 +39,31 @@ $(document).ready(function () {
         }
     });
 
-    function addMonthAmout(array, object) { // Funzione che con un array e un oggetto in entrata aggiunge l'ammontare ad ogni mese corrispondente
+    function addArrayAmount(arrayData, array) { // Funziona che con un array e un oggetto in entrata aggiunge l'amount all'array di base
+        for (var i = 0; i < arrayData.length; i++) {
+            var iObject = arrayData[i];
+            array.push(iObject.amount);
+        }
+    };
+
+    function addMonthAmount(array, object) { // Funzione che con un array e un oggetto in entrata aggiunge l'amount ad ogni mese corrispondente
         for (var i = 0; i < array.length; i++) {
             var iObject = array[i];
             var iObjectDate = iObject.date;
             var dateIt = moment(iObjectDate, 'DD MM YYYY');
             var month = dateIt.format('MMMM');
             object[month] += iObject.amount;
+        }
+    };
+
+    function addSalesmanAmount(array, object) { // Funzione che con un array e un oggetto in entrata aggiunge l'amount ad ogni salesman corrispondente
+        for (var i = 0; i < array.length; i++) {
+            var iObject = array[i];
+            var salesman = iObject.salesman;
+            if (object[salesman] === undefined) {
+                object[salesman] = 0;
+            }
+            object[salesman] += iObject.amount;
         }
     };
 
@@ -55,6 +83,14 @@ $(document).ready(function () {
         return data;
     };
 
+    function createDataPerc(object, total) { // Funzione che crea un array data con valori percentuali in base a un totale
+        var data = [];
+        for (var key in object) {
+            data.push(Math.round((object[key] / total) * 100));
+        };
+        return data;
+    };
+
     function createLineChart(id, labels, data) { // Funzione che crea un grafico tipo line dato un id di destinazione e due array labels e data
         var ctx = $(id);
         var chart = new Chart(ctx, {
@@ -67,6 +103,25 @@ $(document).ready(function () {
                     lineTension: 0,
                     data: data
                 }]
+            }
+        });
+    };
+
+    function createPieChart(id, labels, data) { // Funzione che crea un grafico tipo pie dato un id di destinazione e due array labels e data
+        var ctx = $(id);
+        var chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        'pink',
+                        'orange',
+                        'lightblue',
+                        'lightgreen'
+                    ]
+                }],
+                labels: labels
             }
         });
     };

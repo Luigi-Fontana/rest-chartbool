@@ -6,9 +6,18 @@
 
 
 .container {
-    width: 60vw;
+    width: 100vw;
     height: 100vh;
     display: flex;
     align-items: center;
-    margin: 0 auto;
+}
+
+.chart {
+    width: 50%;
+    padding: 30px;
+    text-align: center;
+}
+
+h2 {
+    padding-bottom: 30px;
 }
