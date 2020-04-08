@@ -8,11 +8,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js" charset="utf-8"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/locale/it.js" charset="utf-8"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.4/handlebars.min.js" charset="utf-8"></script>
+        <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/style.css">
         <title>ChartBool</title>
     </head>
     <body>
-
         <div class="container">
             <div class="chart">
                 <h2>Grafico a Linea per Vendite Totali divise per mesi dell'anno</h2>
@@ -21,6 +21,35 @@
             <div class="chart">
                 <h2>Grafico a Torta per Vendite in percentuale divise per Venditore</h2>
                 <canvas id="pie-chart"></canvas>
+            </div>
+        </div>
+        <div class="container">
+            <div class="form-post">
+                <div class="form-cont">
+                    <h3>Inserisci nuova vendita</h3>
+                </div>
+                <div class="form-cont">
+                    <select id="sel-salesman">
+                        <option value="">Seleziona il Venditore</option>
+                        <option value="Marco">Marco</option>
+                        <option value="Giuseppe">Giuseppe</option>
+                        <option value="Riccardo">Riccardo</option>
+                        <option value="Roberto">Roberto</option>
+                    </select>
+                </div>
+                <div class="form-cont">
+                    <input id="input-date" class="dd" placeholder="GG">
+                    <span>/</span>
+                    <input id="input-date" class="mm" placeholder="MM">
+                    <span>/</span>
+                    <input id="input-date" class="yyyy" value="2017">
+                </div>
+                <div class="form-cont">
+                    <input id="input-amount" placeholder="Inserisci l'importo">
+                </div>
+                <div class="form-cont">
+                    <button id="submit">Inserisci Vendita</button>
+                </div>
             </div>
         </div>
 
