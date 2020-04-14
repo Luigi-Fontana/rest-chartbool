@@ -20,7 +20,7 @@ $(document).ready(function () {
             method: 'POST',
             data: selData,
             success: function (data) {
-                apiCallGet(); // All'interno rievoco la funzione per la chiamata GET per aggiornare i grafici
+                setTimeout(function(){ apiCallGet();}, 1000); // All'interno rievoco la funzione per la chiamata GET per aggiornare i grafici
             },
             error: function (err) {
                 alert('Error');
@@ -42,6 +42,8 @@ $(document).ready(function () {
                 var totalAmount = totalAmountBuilder(data); // Assegno a una variabile la funzione di costruzione Amount totale per usarla nella successiva funzione
                 var objectSalesman = objectSalesmanBuilder(data, totalAmount);
                 createPieChart('#pie-chart', objectSalesman.labels, objectSalesman.data);
+                var objectQuarter = objectQuarterBuilder(data);
+                createBarChart('#bar-chart', objectQuarter.labels, objectQuarter.data);
 
             },
             error: function (err) {
@@ -115,6 +117,29 @@ $(document).ready(function () {
         };
     };
 
+    function objectQuarterBuilder(array) { // Funzione che con un array in entrata crea un oggetto per ritornare due array con mesi e vendite
+        var objectQuarter = {}; // Creazione oggetto vuoto
+        for (var i = 0; i < array.length; i++) { // Ciclo sull'array GET per aggiungere a ogni mese dell'oggetto l'amount corrispondente
+            var iObject = array[i];
+            var iObjectDate = iObject.date;
+            var quarter = moment(iObjectDate, 'DD/MM/YYYY').quarter();
+            if (objectQuarter[quarter] === undefined) {
+                objectQuarter[quarter] = 0;
+            }
+            objectQuarter[quarter] += parseInt(iObject.amount);
+        }
+        var arrayLabels = []; // Inizializzo i due Array da utilizzare in Chart.js
+        var arrayData = [];
+        for (var key in objectQuarter) { // Ciclo all'interno dell'oggetto per trasformare la coppia chiave-valore in due array da dare a Chart.js
+            arrayLabels.push(key); // Inserisco il nome del mese nell'arrayLabels
+            arrayData.push(objectQuarter[key]); // Inserisco nell'arrayData la somma di tutte le vendite relative a quel mese
+        }
+        return {
+            labels: arrayLabels,
+            data: arrayData
+        };
+    };
+
     function createLineChart(id, labels, data) { // Funzione che crea un grafico tipo line dato un id di destinazione e due array labels e data
         var ctx = $(id);
         var chart = new Chart(ctx, {
@@ -125,6 +150,21 @@ $(document).ready(function () {
                     label: 'Vendite Mensili',
                     borderColor: 'darkblue',
                     lineTension: 0,
+                    data: data
+                }]
+            }
+        });
+    };
+
+    function createBarChart(id, labels, data) { // Funzione che crea un grafico tipo line dato un id di destinazione e due array labels e data
+        var ctx = $(id);
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendite Trimestrali',
+                    backgroundColor: 'darkred',
                     data: data
                 }]
             }
