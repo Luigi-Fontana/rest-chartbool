@@ -1,5 +1,6 @@
 $(document).ready(function () {
 
+    var baseUrl = 'http://157.230.17.132:4011/sales';
     apiCallGet();
 
     $('#submit').click(function () { // Al click del bottone
@@ -15,7 +16,7 @@ $(document).ready(function () {
             date: selDate
         };
         $.ajax({ // Chiamata Post con data in ingresso l'oggetto appena creato
-            url: 'http://157.230.17.132:4011/sales',
+            url: baseUrl,
             method: 'POST',
             data: selData,
             success: function (data) {
@@ -33,37 +34,14 @@ $(document).ready(function () {
 
     function apiCallGet() {
         $.ajax({
-            url: 'http://157.230.17.132:4011/sales',
+            url: baseUrl,
             method: 'GET',
             success: function (data) {
-
-                var objectMonth = { // Creazione Oggetto con i mesi che popoleremo con i contenuti della chiamata Ajax
-                    gennaio: 0,
-                    febbraio: 0,
-                    marzo: 0,
-                    aprile: 0,
-                    maggio: 0,
-                    giugno: 0,
-                    luglio: 0,
-                    agosto: 0,
-                    settembre: 0,
-                    ottobre: 0,
-                    novembre: 0,
-                    dicembre: 0,
-                };
-                var objectSalesman = {}; // Creazione oggetto che popoleremo con i salesman e i rispettivi amount
-
-                var arrayAmount = []; // Creazione Array vuoto che popoleremo con gli amount generici
-                addArrayAmount(data, arrayAmount); // Funzione per la popolazione dell'arrayAmount
-
-                var totalAmount = arrayAmount.reduce(function(a, b){ // Creazione variabile con la somma di tutti i valori dell'arrayAmount
-                    return a + b;
-                }, 0);
-
-                addMonthAmount(data, objectMonth); // Richiamo funzione per popolamento objectMonth
-                addSalesmanAmount(data, objectSalesman); // Richiamo funzione per popolamento objectSalesman
-                createLineChart('#line-chart', createLabels(objectMonth), createData(objectMonth)); // Richiamo funzione per generazione Grafico Line
-                createPieChart('#pie-chart', createLabels(objectSalesman), createDataPerc(objectSalesman, totalAmount)); // Richiamo funzione per generazione Grafico Pie
+                var objectMonth = objectMonthBuilder(data); // Assegno a una variabile la funzione che restituisce un oggetto per ricavare in seguito i valori delle chiavi
+                createLineChart('#line-chart', objectMonth.labels, objectMonth.data);
+                var totalAmount = totalAmountBuilder(data); // Assegno a una variabile la funzione di costruzione Amount totale per usarla nella successiva funzione
+                var objectSalesman = objectSalesmanBuilder(data, totalAmount);
+                createPieChart('#pie-chart', objectSalesman.labels, objectSalesman.data);
 
             },
             error: function (err) {
@@ -72,56 +50,69 @@ $(document).ready(function () {
         });
     };
 
-    function addArrayAmount(arrayData, array) { // Funziona che con un array e un oggetto in entrata aggiunge l'amount all'array di base
-        for (var i = 0; i < arrayData.length; i++) {
-            var iObject = arrayData[i];
-            array.push(parseInt(iObject.amount));
-        }
-    };
-
-    function addMonthAmount(array, object) { // Funzione che con un array e un oggetto in entrata aggiunge l'amount ad ogni mese corrispondente
+    function totalAmountBuilder(array) { // Funzione che con un array in entrata ritorna una variabile con valore l'Amount Totale
+        var totalAmount = 0;
         for (var i = 0; i < array.length; i++) {
+            var iObject = array[i];
+            totalAmount += parseInt(iObject.amount);
+        }
+        return totalAmount;
+    }
+
+    function objectMonthBuilder(array) { // Funzione che con un array in entrata crea un oggetto per ritornare due array con mesi e vendite
+        var objectMonth = { // Creazione oggetto con chiavi già fissate
+            gennaio: 0,
+            febbraio: 0,
+            marzo: 0,
+            aprile: 0,
+            maggio: 0,
+            giugno: 0,
+            luglio: 0,
+            agosto: 0,
+            settembre: 0,
+            ottobre: 0,
+            novembre: 0,
+            dicembre: 0,
+        };
+        for (var i = 0; i < array.length; i++) { // Ciclo sull'array GET per aggiungere a ogni mese dell'oggetto l'amount corrispondente
             var iObject = array[i];
             var iObjectDate = iObject.date;
-            var dateIt = moment(iObjectDate, 'DD MM YYYY');
-            var month = dateIt.format('MMMM');
-            object[month] += parseInt(iObject.amount);
+            var month = moment(iObjectDate, 'DD/MM/YYYY').format('MMMM');
+            objectMonth[month] += parseInt(iObject.amount);
         }
+        var arrayLabels = []; // Inizializzo i due Array da utilizzare in Chart.js
+        var arrayData = [];
+        for (var key in objectMonth) { // Ciclo all'interno dell'oggetto per trasformare la coppia chiave-valore in due array da dare a Chart.js
+            arrayLabels.push(key); // Inserisco il nome del mese nell'arrayLabels
+            arrayData.push(objectMonth[key]); // Inserisco nell'arrayData la somma di tutte le vendite relative a quel mese
+        }
+        return {
+            labels: arrayLabels,
+            data: arrayData
+        };
     };
 
-    function addSalesmanAmount(array, object) { // Funzione che con un array e un oggetto in entrata aggiunge l'amount ad ogni salesman corrispondente
-        for (var i = 0; i < array.length; i++) {
+    function objectSalesmanBuilder(array, totalAmount) { // Funzione che con un array in entrata crea un oggetto per ritornare due array con venditori e vendite
+        var objectSalesman = {}; // Creazione oggetto vuoto
+        for (var i = 0; i < array.length; i++) { // Ciclo sull'array GET per aggiungere i venditori all'oggetto e il rispettivo amount per ciascuno di essi
             var iObject = array[i];
             var salesman = iObject.salesman;
-            if (object[salesman] === undefined) {
-                object[salesman] = 0;
+            if (objectSalesman[salesman] === undefined) {
+                objectSalesman[salesman] = 0;
             }
-            object[salesman] += parseInt(iObject.amount);
+            objectSalesman[salesman] += parseInt(iObject.amount);
         }
-    };
-
-    function createLabels(object) { // Funzione che crea un array labels
-        var labels = [];
-        for (var key in object) {
-            labels.push(key);
+        var arrayLabels = []; // Inizializzo i due Array da utilizzare in Chart.js
+        var arrayData = [];
+        for (var key in objectSalesman) { // Ciclo all'interno dell'oggetto per trasformare la coppia chiave-valore in due array da dare a Chart.js
+            arrayLabels.push(key); // Inserisco il nome del venditore nell'arrayLabels
+            var salesmanAmountPerc = ((objectSalesman[key] / totalAmount) * 100).toFixed(2); // Assegno a una variabile il venduto in percentuale
+            arrayData.push(salesmanAmountPerc); // Inserisco nell'arrayData la somma di tutte le vendite relative a quel venditore
+        }
+        return {
+            labels: arrayLabels,
+            data: arrayData
         };
-        return labels;
-    };
-
-    function createData(object) { // Funzione che crea un array data
-        var data = [];
-        for (var key in object) {
-            data.push(object[key]);
-        };
-        return data;
-    };
-
-    function createDataPerc(object, total) { // Funzione che crea un array data con valori percentuali in base a un totale
-        var data = [];
-        for (var key in object) {
-            data.push(Math.round((object[key] / total) * 100));
-        };
-        return data;
     };
 
     function createLineChart(id, labels, data) { // Funzione che crea un grafico tipo line dato un id di destinazione e due array labels e data
@@ -147,14 +138,19 @@ $(document).ready(function () {
             data: {
                 datasets: [{
                     data: data,
-                    backgroundColor: [
-                        'pink',
-                        'orange',
-                        'lightblue',
-                        'lightgreen'
-                    ]
+                    backgroundColor: ['pink', 'orange', 'lightblue', 'lightgreen']
                 }],
                 labels: labels
+            },
+            options: {
+                responsive: true,
+                tooltips: {
+                  callbacks: {
+                    label: function(tooltipItem, data) {
+                      return data['labels'][tooltipItem['index']] + ': ' + data['datasets'][0]['data'][tooltipItem['index']] + '%';
+                    }
+                  }
+                }
             }
         });
     };
